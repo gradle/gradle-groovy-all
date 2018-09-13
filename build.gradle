@@ -3,8 +3,29 @@ plugins {
     id "maven-publish"
 }
 
-def gitVersion = ["git", "describe", "--dirty"].execute().text.trim()
 def groovyVersion = '2.5.2'
+
+/*
+ * Change base version by applying a Git tag.
+ *
+ * Release snapshot version with ./gradlew publish -Prelease
+ * Release final version with ./gradlew publish -Prelease=final
+ */
+
+def release = hasProperty("release")
+def snapshot = findProperty("release") != "final"
+
+def gitVersion = ["git", "describe", "--dirty", "--abbrev=${snapshot ? 0 : 7}"].execute().text.trim()
+if (release && gitVersion.contains("dirty")) {
+    throw new RuntimeException("Cannot release a dirty version")
+}
+if (release && !snapshot && gitVersion.contains("-")) {
+    throw new RuntimeException("Cannot release an untagged version")
+}
+if (snapshot) {
+    gitVersion += "-SNAPSHOT"
+}
+
 group = "org.gradle.groovy"
 version = "$groovyVersion-$gitVersion"
 description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
@@ -97,8 +118,23 @@ publishing {
     }
     repositories {
         maven {
-            name = 'repo'
+            name = "local"
             url = "$buildDir/repos/external"
+        }
+        if (release) {
+            maven {
+                name = "gradle"
+                def repoType = snapshot ? "snapshots" : "releases"
+                url = "https://repo.gradle.org/gradle/libs-$repoType-local"
+                authentication {
+                    basic(BasicAuthentication) {
+                        credentials {
+                            username = property("artifactory_user") ?: "nouser"
+                            password = property("artifactory_password") ?: "nopass"
+                        }
+                    }
+                }
+            }
         }
     }
 }
