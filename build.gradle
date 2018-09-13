@@ -1,0 +1,95 @@
+plugins {
+    id "base"
+    id "maven-publish"
+}
+
+def groovyVersion = '2.5.2'
+group = "org.gradle.groovy"
+version = "$groovyVersion-1.0-SNAPSHOT"
+description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+    groovy
+    groovySources
+    groovyJavadoc
+    groovyGroovydoc
+}
+
+dependencies {
+    groovy        group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
+    groovySources group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion, classifier: "sources"
+}
+
+task configureGroovyAll {
+    doFirst {
+        groovyAll {
+            configurations.groovy.filter { it.name ==~ /groovy-.*\.jar/ }.each { groovyJar ->
+                from zipTree(groovyJar)
+                manifest.from zipTree(groovyJar).find { it.name == "MANIFEST.MF" }
+            }
+        }
+    }
+}
+
+task groovyAll(type: Jar) {
+    dependsOn configureGroovyAll
+    // Keep all licenses and ExtensionModules
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    baseName = "groovy-all"
+    destinationDir = file("build/artifacts/jar")
+}
+
+task download {
+    inputs.files configurations.groovy
+    outputs.dir "${buildDir}/artifacts"
+    doLast {
+        ArtifactResolutionResult result = dependencies.createArtifactResolutionQuery()
+            .forModule("org.codehaus.groovy", "groovy-all", groovyVersion)
+            .withArtifacts(JvmLibrary, SourcesArtifact, JavadocArtifact)
+            .execute()
+        result.resolvedComponents.each { ComponentArtifactsResult component ->
+            component.getArtifacts(SourcesArtifact).each { artifact ->
+                copy {
+                    from artifact.file
+                    into "${buildDir}/artifacts/sources"
+                }
+            }
+            component.getArtifacts(JavadocArtifact).each { artifact ->
+                copy {
+                    from artifact.file
+                    into "${buildDir}/artifacts/javadoc"
+                }
+            }
+        }
+    }
+}
+
+def jarArtifact = artifacts.add("default", groovyAll)
+def sourcesArtifact = artifacts.add("default", file("${buildDir}/artifacts/sources/groovy-all-${groovyVersion}-sources.jar")) {
+    builtBy download
+    classifier "sources"
+}
+def javadocArtifact = artifacts.add("default", file("${buildDir}/artifacts/javadoc/groovy-all-${groovyVersion}-javadoc.jar")) {
+    builtBy download
+    classifier "javadoc"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact jarArtifact
+            artifact sourcesArtifact
+            artifact javadocArtifact
+        }
+    }
+    repositories {
+        maven {
+            name = 'repo'
+            url = "$buildDir/repos/external"
+        }
+    }
+}
