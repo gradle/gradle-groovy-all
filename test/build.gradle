@@ -1,0 +1,8 @@
+plugins {
+    id "groovy"
+}
+
+dependencies {
+    compile project(":")
+    testCompile("junit:junit:4.12")
+}

@@ -9,8 +9,10 @@ group = "org.gradle.groovy"
 version = "$groovyVersion-$gitVersion"
 description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
 
-repositories {
-	mavenCentral()
+allprojects {
+    repositories {
+    	mavenCentral()
+    }
 }
 
 configurations {
