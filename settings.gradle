@@ -1,2 +1,4 @@
 rootProject.name = "groovy-all"
 include "test"
+
+enableFeaturePreview('STABLE_PUBLISHING')
