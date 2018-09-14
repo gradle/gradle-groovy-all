@@ -1,9 +1,11 @@
+import org.gradle.util.VersionNumber
+
 plugins {
     id "base"
     id "maven-publish"
 }
 
-def groovyVersion = '2.5.2'
+def groovyVersion = findProperty("groovyVersion") ?: "2.5.2"
 
 /*
  * Change base version by applying a Git tag.
@@ -45,7 +47,9 @@ configurations {
 
 dependencies {
     groovy group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
-    groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
+    if (VersionNumber.parse(groovyVersion) >= VersionNumber.parse("2.5.0")) {
+       groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
+    }
 }
 
 task writeVersionProperties {
