@@ -173,7 +173,7 @@ publishing {
             maven {
                 name = "gradle"
                 def repoType = snapshot ? "snapshots" : "releases"
-                url = "https://repo.gradle.org/gradle/libs-$repoType-local"
+                url = "https://repo.gradle.org/gradle/ext-$repoType-local"
                 authentication {
                     basic(BasicAuthentication) {
                         credentials {
