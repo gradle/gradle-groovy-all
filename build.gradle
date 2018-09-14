@@ -48,7 +48,17 @@ dependencies {
     groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
 }
 
+task writeVersionProperties {
+    def outputFile = file("${buildDir}/tmp/gradle-groovy-all-version.properties")
+    inputs.property "version", version
+    outputs.file outputFile
+    doLast {
+        outputFile.text = "version = $version\n"
+    }
+}
+
 task configureGroovyAll {
+    inputs.files writeVersionProperties.outputs
     inputs.files configurations.groovy
 
     doFirst {
@@ -56,6 +66,8 @@ task configureGroovyAll {
         def staticExtensionClasses = []
 
         tasks.groovyAll {
+            from writeVersionProperties
+
             configurations.groovy.filter { it.name ==~ /groovy-.*\.jar/ }.each { groovyJar ->
                 def extractedFiles = zipTree(groovyJar)
 
