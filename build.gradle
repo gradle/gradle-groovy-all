@@ -44,16 +44,52 @@ configurations {
 }
 
 dependencies {
-    groovy        group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
-    groovySources group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion, classifier: "sources"
+    groovy group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
+    groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
 }
 
 task configureGroovyAll {
+    inputs.files configurations.groovy
+
     doFirst {
-        groovyAll {
+        def extensionClasses = []
+        def staticExtensionClasses = []
+
+        tasks.groovyAll {
             configurations.groovy.filter { it.name ==~ /groovy-.*\.jar/ }.each { groovyJar ->
-                from zipTree(groovyJar)
-                manifest.from zipTree(groovyJar).find { it.name == "MANIFEST.MF" }
+                def extractedFiles = zipTree(groovyJar)
+
+                extractedFiles.filter { it.name == "org.codehaus.groovy.runtime.ExtensionModule" }.each { extensionModuleFile ->
+                    def extensionModule = new Properties()
+                    extensionModuleFile.withInputStream { input ->
+                        extensionModule.load(input)
+                    }
+                    extensionClasses << extensionModule.extensionClasses
+                    staticExtensionClasses << extensionModule.staticExtensionClasses
+                }
+
+                from(extractedFiles) {
+                    exclude { it.path == "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule" }
+                }
+                manifest.from extractedFiles.find { it.name == "MANIFEST.MF" }
+            }
+
+            def extensionsModuleFile = file("${buildDir}/tmp/org.codehaus.groovy.runtime.ExtensionModule")
+
+            def extensnionModuleProperties = new Properties()
+            extensnionModuleProperties["moduleName"] = "groovy-all"
+            extensnionModuleProperties["moduleVersion"] = groovyVersion
+            extensnionModuleProperties["extensionClasses"] = extensionClasses.join(",")
+            extensnionModuleProperties["staticExtensionClasses"] = staticExtensionClasses.join(",")
+
+            delete(extensionsModuleFile)
+            mkdir(extensionsModuleFile.parentFile)
+            extensionsModuleFile.withOutputStream { out ->
+                extensnionModuleProperties.store(out, null)
+            }
+
+            from(extensionsModuleFile) {
+                into("META-INF/groovy")
             }
         }
     }
