@@ -15,7 +15,7 @@ def groovyVersion = findProperty("groovyVersion") ?: "2.5.2"
  */
 
 def release = hasProperty("release")
-def snapshot = findProperty("release") != "final"
+def snapshot = findProperty("release") != "final" || groovyVersion.endsWith("-SNAPSHOT")
 
 def gitVersion = ["git", "describe", "--dirty", "--abbrev=${snapshot ? 0 : 7}"].execute().text.trim()
 if (release && gitVersion.contains("dirty")) {
@@ -34,7 +34,8 @@ description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
 
 allprojects {
     repositories {
-    	mavenCentral()
+        mavenCentral()
+        maven { url = "https://oss.jfrog.org/artifactory/oss-snapshot-local" }
     }
 }
 
