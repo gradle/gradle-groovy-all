@@ -1,5 +1,5 @@
-package GradleGroovyAll
-
+import GradleGroovyAll.GradleGroovyAllPublishing
+import GradleGroovyAll.GradleGroovyAllSanityCheck
 import jetbrains.buildServer.configs.kotlin.v2018_2.project
 import jetbrains.buildServer.configs.kotlin.v2018_2.version
 
