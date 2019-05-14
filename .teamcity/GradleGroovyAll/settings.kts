@@ -1,3 +1,4 @@
+package GradleGroovyAll
 
 import jetbrains.buildServer.configs.kotlin.v2018_2.project
 import jetbrains.buildServer.configs.kotlin.v2018_2.version
