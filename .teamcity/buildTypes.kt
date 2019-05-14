@@ -2,9 +2,7 @@ import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2018_2.CheckoutMode
 import jetbrains.buildServer.configs.kotlin.v2018_2.DslContext
 import jetbrains.buildServer.configs.kotlin.v2018_2.ParameterDisplay
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.v2018_2.buildSteps.gradle
-import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.schedule
 import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.vcs
 
 open class GradleGroovyAllBase : BuildType() {
