@@ -6,4 +6,4 @@ This project generates an uber JAR from Groovy JARs similar to the the `groovy-a
 ### Steps to publish
 
 - Update `groovyVersion` in `build.gradle` or add a parameter `-PgroovyVersion=X`.
-- To release a version, run `./gradlew publish -Prelease`
+- To release a version, run `./gradlew publish -Prelease -PartifactoryUser=<username> -PartifactoryPassword=<password>`
