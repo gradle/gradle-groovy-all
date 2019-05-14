@@ -179,8 +179,8 @@ publishing {
                 authentication {
                     basic(BasicAuthentication) {
                         credentials {
-                            username = property("artifactory_user") ?: "nouser"
-                            password = property("artifactory_password") ?: "nopass"
+                            username = property("artifactoryUser") ?: "nouser"
+                            password = property("artifactoryPassword") ?: "nopass"
                         }
                     }
                 }
