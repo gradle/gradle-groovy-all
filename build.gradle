@@ -3,6 +3,7 @@ import org.gradle.util.VersionNumber
 plugins {
     id "base"
     id "maven-publish"
+    id "com.gradle.build-scan" version "2.3"
 }
 
 def groovyVersion = findProperty("groovyVersion") ?: "2.5.2"
@@ -28,6 +29,14 @@ if (release && !snapshot && gitVersion.contains("-")) {
 group = "org.gradle.groovy"
 version = "$gitVersion-$groovyVersion"
 description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
+
+println "The version is: $version"
+
+buildScan {
+    server = "https://e.grdev.net"
+    publishAlways()
+    value("RELEASED_VERSION", version)
+}
 
 allprojects {
     repositories {
@@ -181,8 +190,6 @@ publishing {
                         credentials {
                             username = property("artifactoryUser") ?: "nouser"
                             password = property("artifactoryPassword") ?: "nopass"
-                            println("Using username: ${username}")
-                            println("Using password: ${password.substring(0, 2)}...")
                         }
                     }
                 }
