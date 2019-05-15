@@ -181,6 +181,8 @@ publishing {
                         credentials {
                             username = property("artifactoryUser") ?: "nouser"
                             password = property("artifactoryPassword") ?: "nopass"
+                            println("Using username: ${username}")
+                            println("Using password: ${password.substring(0, 2)}...")
                         }
                     }
                 }
