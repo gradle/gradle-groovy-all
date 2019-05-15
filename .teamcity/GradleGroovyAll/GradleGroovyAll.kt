@@ -12,7 +12,7 @@ open class GradleGroovyAllBase : BuildType() {
         vcs {
             root(DslContext.settingsRoot)
 
-            checkoutMode = CheckoutMode.ON_SERVER
+            checkoutMode = CheckoutMode.ON_AGENT
             cleanCheckout = true
         }
 
