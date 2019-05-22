@@ -6,7 +6,7 @@ plugins {
     id "com.gradle.build-scan" version "2.3"
 }
 
-def groovyVersion = findProperty("groovyVersion") ?: "2.5.7"
+def groovyVersion = getProperty("groovyVersion")
 
 /*
  * Change base version by applying a Git tag.
