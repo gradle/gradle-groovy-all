@@ -12,10 +12,6 @@ def gradleGroovyAllVersion = getProperty("gradleGroovyAllVersion")
 def release = hasProperty("release")
 def snapshot = groovyVersion.endsWith("-SNAPSHOT")
 
-if(!release && !snapshot) {
-    throw new RuntimeException("To release a non-snapshot version, use -Prelease")
-}
-
 group = "org.gradle.groovy"
 version = "$gradleGroovyAllVersion-$groovyVersion"
 description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
