@@ -7,27 +7,13 @@ plugins {
 }
 
 def groovyVersion = getProperty("groovyVersion")
-
-/*
- * Change base version by applying a Git tag.
- *
- * Release snapshot version with ./gradlew publish -Prelease
- * Release final version with ./gradlew publish -Prelease=final
- */
+def gradleGroovyAllVersion = getProperty("gradleGroovyAllVersion")
 
 def release = hasProperty("release")
 def snapshot = groovyVersion.endsWith("-SNAPSHOT")
 
-def gitVersion = ["git", "describe", "--dirty", "--abbrev=${snapshot ? 0 : 7}"].execute().text.trim()
-if (release && gitVersion.contains("dirty")) {
-    throw new RuntimeException("Cannot release a dirty version")
-}
-if (release && !snapshot && gitVersion.contains("-")) {
-    throw new RuntimeException("Cannot release an untagged version")
-}
-
 group = "org.gradle.groovy"
-version = "$gitVersion-$groovyVersion"
+version = "$gradleGroovyAllVersion-$groovyVersion"
 description "Replacement for groovy-all.jar discontinued in Groovy 2.5"
 
 println "The version is: $version"
