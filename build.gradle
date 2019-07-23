@@ -1,3 +1,4 @@
+import groovy.io.FileType
 import org.gradle.util.VersionNumber
 
 plugins {
@@ -26,7 +27,7 @@ buildScan {
 
 allprojects {
     repositories {
-    	mavenCentral()
+        mavenCentral()
         maven { url = "https://oss.jfrog.org/artifactory/oss-snapshot-local" }
     }
 }
@@ -41,7 +42,7 @@ configurations {
 dependencies {
     groovy group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
     if (VersionNumber.parse(groovyVersion) >= VersionNumber.parse("2.5.0")) {
-       groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
+        groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
     }
 }
 
@@ -59,57 +60,81 @@ task configureGroovyAll {
     inputs.files configurations.groovy
 
     doFirst {
-        def extensionClasses = []
-        def staticExtensionClasses = []
+        def toMerge = [
+            'LICENSE'                       : 'META-INF/LICENSE',
+            'NOTICE'                        : 'META-INF/NOTICE',
+            'AST_TRANSFORMATION'            : 'META-INF/services/org.codehaus.groovy.transform.ASTTransformation',
+            'EXTENSION_MODULE'              : 'META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule',
+            'GROOVY_RELEASE_INFO_PROPERTIES': 'META-INF/groovy-release-info.properties',
+            'GROOVY_RUNNER'                 : 'META-INF/services/org.apache.groovy.plugin.GroovyRunner',
+            'INDEX_LIST'                    : 'META-INF/INDEX.LIST',
+            'MANIFEST_MF'                   : 'META-INF/MANIFEST.MF'
+        ]
+
+        def collectDuplicates = { File[] roots ->
+            Map<String, List<File>> duplicates = [:].withDefault { [] }
+            roots.each { root ->
+                root.eachFileRecurse(FileType.FILES) {
+                    def relative = root.toURI().relativize(it.toURI())
+                    duplicates[relative.toString()] += it
+                }
+            }
+            return duplicates.findAll { it.value.size() > 1 }
+        }
+
+        def merge = { String relative, List<File> files ->
+            switch (relative) {
+                case [toMerge.LICENSE, toMerge.NOTICE, toMerge.AST_TRANSFORMATION]:
+                    return files*.text.join("\n")
+                case [toMerge.GROOVY_RELEASE_INFO_PROPERTIES]:
+                    return files[0].text
+                case toMerge.EXTENSION_MODULE:
+                    return """
+                        moduleName=groovy-all
+                        moduleVersion=${(files[0].text =~ /moduleVersion=(.+)/)[0][1]}
+                        extensionClasses=${(files*.text.join('\n') =~ /extensionClasses=(.+)/)*.getAt(1).toSet().join(',')}
+                        staticExtensionClasses=${(files*.text.join('\n') =~ /staticExtensionClasses=(.+)/)*.getAt(1).toSet().join(',')}
+                    """.stripIndent().trim()
+                case [toMerge.MANIFEST_MF, toMerge.INDEX_LIST, toMerge.GROOVY_RUNNER]:
+                    return null
+                default:
+                    throw new IllegalThreadStateException(files.toString())
+            }
+        }
 
         tasks.groovyAll {
             from writeVersionProperties
 
-            configurations.groovy.filter { it.name ==~ /groovy-.*\.jar/ }.each { groovyJar ->
-                def extractedFiles = zipTree(groovyJar)
+            configurations.groovy
+                .filter { it.name ==~ /groovy-.*\.jar/ }
+                .collect { zipTree(it) }
+                .each { tree ->
+                    tree.files /* extract archives */
 
-                extractedFiles.filter { it.name == "org.codehaus.groovy.runtime.ExtensionModule" }.each { extensionModuleFile ->
-                    def extensionModule = new Properties()
-                    extensionModuleFile.withInputStream { input ->
-                        extensionModule.load(input)
-                    }
-                    extensionClasses << extensionModule.extensionClasses
-                    staticExtensionClasses << extensionModule.staticExtensionClasses
+                    def expandedArchives = new File("${buildDir}/tmp/expandedArchives")
+                    def mergedFolder = new File(expandedArchives, 'merged')
+                    collectDuplicates(expandedArchives.listFiles())
+                        .each { String relative, List<File> files ->
+                            def mergedFile = new File(mergedFolder, relative)
+                            def content = merge(relative, files)
+                            if (content != null) {
+                                mergedFile.parentFile.mkdirs()
+                                mergedFile.text = content
+                            }
+                        }
+
+                    from(mergedFolder)
+                    from(tree) { exclude toMerge.values() }
                 }
-
-                from(extractedFiles) {
-                    exclude { it.path == "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule" }
-                }
-                manifest.from extractedFiles.find { it.name == "MANIFEST.MF" }
-            }
-
-            def extensionsModuleFile = file("${buildDir}/tmp/org.codehaus.groovy.runtime.ExtensionModule")
-
-            def extensnionModuleProperties = new Properties()
-            extensnionModuleProperties["moduleName"] = "groovy-all"
-            extensnionModuleProperties["moduleVersion"] = groovyVersion
-            extensnionModuleProperties["extensionClasses"] = extensionClasses.join(",")
-            extensnionModuleProperties["staticExtensionClasses"] = staticExtensionClasses.join(",")
-
-            delete(extensionsModuleFile)
-            mkdir(extensionsModuleFile.parentFile)
-            extensionsModuleFile.withOutputStream { out ->
-                extensnionModuleProperties.store(out, null)
-            }
-
-            from(extensionsModuleFile) {
-                into("META-INF/groovy")
-            }
         }
     }
 }
 
 task groovyAll(type: Jar) {
     dependsOn configureGroovyAll
-    // Keep all licenses and ExtensionModules
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    baseName = "groovy-all"
-    destinationDir = file("build/artifacts/jar")
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    archiveBaseName = "groovy-all"
+    destinationDirectory = file("build/artifacts/jar")
 }
 
 task download {
