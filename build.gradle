@@ -1,4 +1,3 @@
-import groovy.io.FileType
 import org.gradle.util.VersionNumber
 
 plugins {
@@ -71,18 +70,16 @@ task configureGroovyAll {
             'MANIFEST_MF'                   : 'META-INF/MANIFEST.MF'
         ]
 
-        def collectDuplicates = { File[] roots ->
+        def findDuplicates = { List<FileTree> fileForest ->
             Map<String, List<File>> duplicates = [:].withDefault { [] }
-            roots.each { root ->
-                root.eachFileRecurse(FileType.FILES) {
-                    def relative = root.toURI().relativize(it.toURI())
-                    duplicates[relative.toString()] += it
-                }
-            }
-            return duplicates.findAll { it.value.size() > 1 }
+            fileForest*.visit([
+                visitDir : {},
+                visitFile: { duplicates[it.relativePath.toString()] << it.file }
+            ] as FileVisitor)
+            duplicates.findAll { it.value.size() > 1 }
         }
 
-        def merge = { String relative, List<File> files ->
+        def mergeFiles = { String relative, List<File> files ->
             switch (relative) {
                 case [toMerge.LICENSE, toMerge.NOTICE, toMerge.AST_TRANSFORMATION]:
                     return files*.text.join("\n")
@@ -102,30 +99,34 @@ task configureGroovyAll {
             }
         }
 
+        def mergeDuplicates = { FileTree tree, Map<String, List<File>> duplicates ->
+            def mergedFolder = new File(tree.tree.tmpDir, 'merged')
+            duplicates.each { relative, files ->
+                def mergedFile = new File(mergedFolder, relative)
+                def content = mergeFiles(relative, files)
+                if (content != null) {
+                    mergedFile.parentFile.mkdirs()
+                    mergedFile.text = content
+                }
+            }
+            mergedFolder
+        }
+
         tasks.groovyAll {
             from writeVersionProperties
 
-            configurations.groovy
+            def fileForest = configurations.groovy
                 .filter { it.name ==~ /groovy-.*\.jar/ }
                 .collect { zipTree(it) }
-                .each { tree ->
-                    tree.files /* extract archives */
 
-                    def expandedArchives = new File("${buildDir}/tmp/expandedArchives")
-                    def mergedFolder = new File(expandedArchives, 'merged')
-                    collectDuplicates(expandedArchives.listFiles())
-                        .each { String relative, List<File> files ->
-                            def mergedFile = new File(mergedFolder, relative)
-                            def content = merge(relative, files)
-                            if (content != null) {
-                                mergedFile.parentFile.mkdirs()
-                                mergedFile.text = content
-                            }
-                        }
+            def duplicates = findDuplicates(fileForest)
 
-                    from(mergedFolder)
-                    from(tree) { exclude toMerge.values() }
-                }
+            fileForest.each { tree ->
+                from(tree) { exclude toMerge.values() }
+
+                def mergedFolder = mergeDuplicates(tree, duplicates)
+                from(mergedFolder)
+            }
         }
     }
 }
