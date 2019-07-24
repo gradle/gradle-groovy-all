@@ -71,29 +71,34 @@ task configureGroovyAll {
         ]
 
         def findDuplicates = { List<FileTree> fileForest ->
-            Map<String, List<File>> duplicates = [:].withDefault { [] }
+            Map<String, List<File>> filesByRelativePath = [:].withDefault { [] }
             fileForest*.visit([
                 visitDir : {},
-                visitFile: { duplicates[it.relativePath.toString()] << it.file }
+                visitFile: { filesByRelativePath[it.relativePath.toString()] << it.file }
             ] as FileVisitor)
-            duplicates.findAll { it.value.size() > 1 }
+            filesByRelativePath.findAll { it.value.size() > 1 }
+        }
+
+        def concatenate = { List<File> files -> files*.text.join('\n') }
+
+        def joinValues = { String properties, String keyName ->
+            (properties =~ /$keyName\s*=\s*(.+)/)*.getAt(1).join(',')
         }
 
         def mergeFiles = { String relative, List<File> files ->
-            def concatenatedFiles = files*.text.join('\n')
             switch (relative) {
                 case toMerge.LICENSE:
                 case toMerge.NOTICE:
                 case toMerge.AST_TRANSFORMATION:
-                    return concatenatedFiles
+                    return concatenate(files)
                 case toMerge.GROOVY_RELEASE_INFO_PROPERTIES:
                     return files[0].text
                 case toMerge.EXTENSION_MODULE:
                     return """
                         moduleName=groovy-all
-                        moduleVersion=${(files[0].text =~ /moduleVersion=(.+)/)[0][1]}
-                        extensionClasses=${(concatenatedFiles =~ /extensionClasses=(.+)/)*.getAt(1).join(',')}
-                        staticExtensionClasses=${(concatenatedFiles =~ /staticExtensionClasses=(.+)/)*.getAt(1).join(',')}
+                        moduleVersion=${joinValues(files[0].text, 'moduleVersion')}
+                        extensionClasses=${joinValues(concatenate(files), 'extensionClasses')}
+                        staticExtensionClasses=${joinValues(concatenate(files), 'staticExtensionClasses')}
                     """.stripIndent().trim()
                 case toMerge.MANIFEST_MF:
                 case toMerge.INDEX_LIST:
