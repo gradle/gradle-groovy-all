@@ -82,9 +82,11 @@ task configureGroovyAll {
         def mergeFiles = { String relative, List<File> files ->
             def concatenatedFiles = files*.text.join('\n')
             switch (relative) {
-                case [toMerge.LICENSE, toMerge.NOTICE, toMerge.AST_TRANSFORMATION]:
+                case toMerge.LICENSE:
+                case toMerge.NOTICE:
+                case toMerge.AST_TRANSFORMATION:
                     return concatenatedFiles
-                case [toMerge.GROOVY_RELEASE_INFO_PROPERTIES]:
+                case toMerge.GROOVY_RELEASE_INFO_PROPERTIES:
                     return files[0].text
                 case toMerge.EXTENSION_MODULE:
                     return """
@@ -93,7 +95,9 @@ task configureGroovyAll {
                         extensionClasses=${(concatenatedFiles =~ /extensionClasses=(.+)/)*.getAt(1).join(',')}
                         staticExtensionClasses=${(concatenatedFiles =~ /staticExtensionClasses=(.+)/)*.getAt(1).join(',')}
                     """.stripIndent().trim()
-                case [toMerge.MANIFEST_MF, toMerge.INDEX_LIST, toMerge.GROOVY_RUNNER]:
+                case toMerge.MANIFEST_MF:
+                case toMerge.INDEX_LIST:
+                case toMerge.GROOVY_RUNNER:
                     return null
                 default:
                     throw new IllegalThreadStateException(files.toString())
