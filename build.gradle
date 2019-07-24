@@ -112,9 +112,9 @@ task configureGroovyAll {
         def mergeDuplicates = { FileTree tree, Map<String, List<File>> duplicates ->
             def mergedFolder = new File(tree.tree.tmpDir, 'merged')
             duplicates.each { relative, files ->
-                def mergedFile = new File(mergedFolder, relative)
                 def content = mergeFiles(relative, files)
                 if (content != null) {
+                    def mergedFile = new File(mergedFolder, relative)
                     mergedFile.parentFile.mkdirs()
                     mergedFile.text = content
                 }
