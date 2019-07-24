@@ -80,17 +80,18 @@ task configureGroovyAll {
         }
 
         def mergeFiles = { String relative, List<File> files ->
+            def concatenatedFiles = files*.text.join('\n')
             switch (relative) {
                 case [toMerge.LICENSE, toMerge.NOTICE, toMerge.AST_TRANSFORMATION]:
-                    return files*.text.join("\n")
+                    return concatenatedFiles
                 case [toMerge.GROOVY_RELEASE_INFO_PROPERTIES]:
                     return files[0].text
                 case toMerge.EXTENSION_MODULE:
                     return """
                         moduleName=groovy-all
                         moduleVersion=${(files[0].text =~ /moduleVersion=(.+)/)[0][1]}
-                        extensionClasses=${(files*.text.join('\n') =~ /extensionClasses=(.+)/)*.getAt(1).toSet().join(',')}
-                        staticExtensionClasses=${(files*.text.join('\n') =~ /staticExtensionClasses=(.+)/)*.getAt(1).toSet().join(',')}
+                        extensionClasses=${(concatenatedFiles =~ /extensionClasses=(.+)/)*.getAt(1).join(',')}
+                        staticExtensionClasses=${(concatenatedFiles =~ /staticExtensionClasses=(.+)/)*.getAt(1).join(',')}
                     """.stripIndent().trim()
                 case [toMerge.MANIFEST_MF, toMerge.INDEX_LIST, toMerge.GROOVY_RUNNER]:
                     return null
