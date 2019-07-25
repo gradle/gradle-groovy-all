@@ -36,10 +36,13 @@ configurations {
     groovySources
     groovyJavadoc
     groovyGroovydoc
+
 }
 
 dependencies {
-    groovy group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion
+    groovy(group: "org.codehaus.groovy", name: "groovy-all", version: groovyVersion) {
+        exclude group: 'org.codehaus.groovy', module: 'groovy-macro'
+    }
     if (VersionNumber.parse(groovyVersion) >= VersionNumber.parse("2.5.0")) {
         groovy group: "org.codehaus.groovy", name: "groovy-dateutil", version: groovyVersion
     }
@@ -62,7 +65,6 @@ task configureGroovyAll {
         def toMerge = [
             'LICENSE'                       : 'META-INF/LICENSE',
             'NOTICE'                        : 'META-INF/NOTICE',
-            'AST_TRANSFORMATION'            : 'META-INF/services/org.codehaus.groovy.transform.ASTTransformation',
             'EXTENSION_MODULE'              : 'META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule',
             'GROOVY_RELEASE_INFO_PROPERTIES': 'META-INF/groovy-release-info.properties',
             'GROOVY_RUNNER'                 : 'META-INF/services/org.apache.groovy.plugin.GroovyRunner',
@@ -89,7 +91,6 @@ task configureGroovyAll {
             switch (relative) {
                 case toMerge.LICENSE:
                 case toMerge.NOTICE:
-                case toMerge.AST_TRANSFORMATION:
                     return concatenate(files)
                 case toMerge.GROOVY_RELEASE_INFO_PROPERTIES:
                     return files[0].text
