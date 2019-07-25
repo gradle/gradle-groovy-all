@@ -82,7 +82,7 @@ task configureGroovyAll {
         def concatenate = { List<File> files -> files*.text.join('\n') }
 
         def joinValues = { String properties, String keyName ->
-            (properties =~ /$keyName\s*=\s*(.+)/)*.getAt(1).join(',')
+            (properties =~ /$keyName *= *(.+)/)*.getAt(1).join(',')
         }
 
         def mergeFiles = { String relative, List<File> files ->
