@@ -6,4 +6,4 @@ This project generates an uber JAR from Groovy JARs similar to the the `groovy-a
 ### Steps to publish
 
 - Update the version in `gradle.properties`
-- Run [the TC job](https://builds.gradle.org/viewType.html?buildTypeId=GradleGroovy_GradleGroovyAllPublishing) (this job will run `./gradlew publish -Prelease -PgroovyVersoin=2.5.7 -PgradleGroovyAllVersion=1.0 -PartifactoryUser=<username> -PartifactoryPassword=<password>`)
+- Run [the TC job](https://builds.gradle.org/viewType.html?buildTypeId=GradleGroovy_GradleGroovyAllPublishing) (this job will run `./gradlew publish -Prelease -PgroovyVersion=2.5.7 -PgradleGroovyAllVersion=1.0 -PartifactoryUser=<username> -PartifactoryPassword=<password>`)
