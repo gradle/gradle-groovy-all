@@ -1,7 +1,7 @@
 import GradleGroovyAll.GradleGroovyAllPublishing
 import GradleGroovyAll.GradleGroovyAllSanityCheck
-import jetbrains.buildServer.configs.kotlin.v2018_2.project
-import jetbrains.buildServer.configs.kotlin.v2018_2.version
+import jetbrains.buildServer.configs.kotlin.v2019_2.project
+import jetbrains.buildServer.configs.kotlin.v2019_2.version
 
 /*
 The settings script is an entry point for defining a TeamCity
@@ -25,7 +25,7 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 'Debug' option is available in the context menu for the task.
 */
 
-version = "2018.2"
+version = "2019.2"
 
 project {
     buildType(GradleGroovyAllPublishing)
