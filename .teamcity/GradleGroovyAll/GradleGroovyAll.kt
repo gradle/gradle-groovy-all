@@ -33,12 +33,14 @@ object GradleGroovyAllPublishing : GradleGroovyAllBase() {
         params {
             text("ARTIFACTORY_USERNAME", "bot-build-tool", allowEmpty = true)
             password("ARTIFACTORY_PASSWORD", "credentialsJSON:2b7529cd-77cd-49f4-9416-9461f6ac9018", display = ParameterDisplay.HIDDEN)
+            param("env.ORG_GRADLE_PROJECT_artifactoryUser", "%ARTIFACTORY_USERNAME%")
+            param("env.ORG_GRADLE_PROJECT_artifactoryPassword", "%ARTIFACTORY_PASSWORD%")
         }
 
         steps {
             gradle {
                 tasks = "clean publish"
-                gradleParams = "-Prelease -PartifactoryUser=%ARTIFACTORY_USERNAME% -PartifactoryPassword=%ARTIFACTORY_PASSWORD%"
+                gradleParams = "-Prelease"
             }
         }
     }
